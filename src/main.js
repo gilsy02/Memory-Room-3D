@@ -11,6 +11,7 @@ import { createPhotoFrames } from './objects/photoFrame.js';
 import { createStringLights } from './objects/stringLights.js';
 import { setupHUD } from './ui/hud.js';
 import { setupRaycaster } from './interaction/raycaster.js';
+import { setupPolaroidModal } from './ui/polaroidModal.js';
 
 console.log('[기억의 다락방] Initializing project scaffolding...');
 const initialMemories = getMemories();
@@ -29,11 +30,13 @@ let controls = null;
 let mobileControls = null;
 let hud = null;
 let raycaster = null;
+let polaroid = null;
 
 function isAnyModalOpen() {
   return (
     (manageModal && !manageModal.classList.contains('hidden')) ||
-    (polaroidModal && !polaroidModal.classList.contains('hidden'))
+    (polaroidModal && !polaroidModal.classList.contains('hidden')) ||
+    Boolean(polaroid && polaroid.isOpen())
   );
 }
 
@@ -83,11 +86,60 @@ if (canvas) {
     },
     onSelect: (memory, slot) => {
       console.log(`[기억의 다락방] Selected memory #${slot}: ${memory?.title}`);
-      // Dispatch custom event for Task 8 Polaroid modal integration
+      const latestMemories = getMemories();
+      if (polaroid) {
+        polaroid.open(memory, latestMemories);
+      }
+      // Dispatch custom event for external integrations
       const event = new CustomEvent('memory-select', {
         detail: { memory, slot }
       });
       window.dispatchEvent(event);
+    }
+  });
+
+  // Setup Emotional Polaroid Detail Modal
+  polaroid = setupPolaroidModal({
+    controls,
+    raycaster,
+    onEdit: (memory) => {
+      console.log(`[기억의 다락방] Edit memory requested for slot ${memory?.slot}: ${memory?.title}`);
+      if (polaroid) {
+        polaroid.close();
+      }
+      if (manageModal) {
+        if (controls) {
+          controls.disable();
+          controls.unlock();
+        }
+        if (raycaster) {
+          raycaster.setEnabled(false);
+        }
+        if (hud) {
+          hud.hidePrompt();
+        }
+        if (mobileControls && typeof mobileControls.hideJoystick === 'function') {
+          mobileControls.hideJoystick();
+        }
+        if (memory?.slot) {
+          const slotBtn = manageModal.querySelector(`.slot-btn[data-slot="${memory.slot}"]`);
+          if (slotBtn) {
+            const allSlotBtns = manageModal.querySelectorAll('.slot-btn');
+            allSlotBtns.forEach((btn) => {
+              btn.classList.remove('active', 'border-amber-500/60', 'bg-amber-500/20', 'text-amber-200');
+              btn.classList.add('border-stone-800', 'bg-stone-900/60', 'text-stone-400');
+            });
+            slotBtn.classList.remove('border-stone-800', 'bg-stone-900/60', 'text-stone-400');
+            slotBtn.classList.add('active', 'border-amber-500/60', 'bg-amber-500/20', 'text-amber-200');
+          }
+        }
+        manageModal.classList.remove('hidden');
+      }
+    },
+    onClose: () => {
+      if (hud) {
+        hud.hidePrompt();
+      }
     }
   });
 
@@ -232,26 +284,14 @@ if (manageClose && manageModal) {
   });
 }
 
-if (polaroidClose && polaroidModal) {
-  polaroidClose.addEventListener('click', () => {
-    polaroidModal.classList.add('hidden');
-    if (controls) {
-      controls.enable();
-    }
-    if (raycaster) {
-      raycaster.setEnabled(true);
-    }
-    if (startOverlay) {
-      startOverlay.classList.remove('hidden');
-    }
-  });
-}
-
-// Hook placeholder for memory-select event
+// Window-level memory-select event hook for external or debug triggers
 if (typeof window !== 'undefined') {
   window.addEventListener('memory-select', (event) => {
     const { memory, slot } = event.detail || {};
     console.log(`[기억의 다락방] memory-select received for slot ${slot}:`, memory?.title);
+    if (polaroid && !polaroid.isOpen() && memory) {
+      polaroid.open(memory, getMemories());
+    }
   });
 }
 

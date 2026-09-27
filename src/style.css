@@ -91,11 +91,38 @@
   pointer-events: auto;
 }
 
-/* Polaroid Card Texture & Shadow */
+/* Polaroid Card Texture & Floating Animation */
+@keyframes polaroidFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(0.25deg);
+  }
+}
+
 .polaroid-card {
   background-color: var(--color-paper);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65), 0 0 30px rgba(255, 198, 125, 0.15);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.65),
+    0 0 35px rgba(255, 198, 125, 0.18),
+    inset 0 0 80px rgba(245, 230, 211, 0.25);
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: polaroidFloat 5s ease-in-out infinite;
+}
+
+.polaroid-card:hover {
+  animation-play-state: paused;
+}
+
+.polaroid-washi-tape {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.25),
+    rgba(255, 255, 255, 0.25) 8px,
+    transparent 8px,
+    transparent 16px
+  );
 }
 
 /* Custom Scrollbar for Story & Modal */
