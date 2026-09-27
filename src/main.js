@@ -12,6 +12,7 @@ import { createStringLights } from './objects/stringLights.js';
 import { setupHUD } from './ui/hud.js';
 import { setupRaycaster } from './interaction/raycaster.js';
 import { setupPolaroidModal } from './ui/polaroidModal.js';
+import { setupPhotoManagerModal } from './ui/photoManagerModal.js';
 
 console.log('[기억의 다락방] Initializing project scaffolding...');
 const initialMemories = getMemories();
@@ -31,12 +32,15 @@ let mobileControls = null;
 let hud = null;
 let raycaster = null;
 let polaroid = null;
+let photoManager = null;
+let hasEnteredRoom = false;
 
 function isAnyModalOpen() {
   return (
+    Boolean(photoManager && photoManager.isOpen()) ||
+    Boolean(polaroid && polaroid.isOpen()) ||
     (manageModal && !manageModal.classList.contains('hidden')) ||
-    (polaroidModal && !polaroidModal.classList.contains('hidden')) ||
-    Boolean(polaroid && polaroid.isOpen())
+    (polaroidModal && !polaroidModal.classList.contains('hidden'))
   );
 }
 
@@ -107,38 +111,53 @@ if (canvas) {
       if (polaroid) {
         polaroid.close();
       }
-      if (manageModal) {
-        if (controls) {
-          controls.disable();
-          controls.unlock();
-        }
-        if (raycaster) {
-          raycaster.setEnabled(false);
-        }
-        if (hud) {
-          hud.hidePrompt();
-        }
-        if (mobileControls && typeof mobileControls.hideJoystick === 'function') {
-          mobileControls.hideJoystick();
-        }
-        if (memory?.slot) {
-          const slotBtn = manageModal.querySelector(`.slot-btn[data-slot="${memory.slot}"]`);
-          if (slotBtn) {
-            const allSlotBtns = manageModal.querySelectorAll('.slot-btn');
-            allSlotBtns.forEach((btn) => {
-              btn.classList.remove('active', 'border-amber-500/60', 'bg-amber-500/20', 'text-amber-200');
-              btn.classList.add('border-stone-800', 'bg-stone-900/60', 'text-stone-400');
-            });
-            slotBtn.classList.remove('border-stone-800', 'bg-stone-900/60', 'text-stone-400');
-            slotBtn.classList.add('active', 'border-amber-500/60', 'bg-amber-500/20', 'text-amber-200');
-          }
-        }
-        manageModal.classList.remove('hidden');
+      if (photoManager) {
+        photoManager.open(memory?.slot || 1);
       }
     },
     onClose: () => {
       if (hud) {
         hud.hidePrompt();
+      }
+    }
+  });
+
+  // Setup Photo & Memory Management Modal
+  photoManager = setupPhotoManagerModal({
+    controls,
+    raycaster,
+    memories: initialMemories,
+    onSave: (savedItem) => {
+      console.log(`[기억의 다락방] Updating 3D frame texture for slot ${savedItem.slot}`);
+      updateFrameTexture(savedItem.slot, savedItem.imageUrl);
+      const fresh = getMemories();
+      if (polaroid) {
+        polaroid.setMemories(fresh);
+      }
+    },
+    onReset: (freshMemories) => {
+      console.log('[기억의 다락방] Resetting all 3D frame textures to presets');
+      freshMemories.forEach((m) => updateFrameTexture(m.slot, m.imageUrl));
+      if (polaroid) {
+        polaroid.setMemories(freshMemories);
+      }
+    },
+    onImport: (importedMemories) => {
+      console.log('[기억의 다락방] Imported memories, updating all 3D frame textures');
+      importedMemories.forEach((m) => updateFrameTexture(m.slot, m.imageUrl));
+      if (polaroid) {
+        polaroid.setMemories(importedMemories);
+      }
+    },
+    onClose: () => {
+      if (hud) {
+        hud.hidePrompt();
+      }
+      if (!hasEnteredRoom && startOverlay) {
+        startOverlay.classList.remove('hidden');
+      }
+      if (hasEnteredRoom && mobileControls && typeof mobileControls.showJoystick === 'function') {
+        mobileControls.showJoystick();
       }
     }
   });
@@ -221,6 +240,7 @@ if (canvas) {
 
 // Start overlay enter room hook
 function enterRoom() {
+  hasEnteredRoom = true;
   if (startOverlay) {
     startOverlay.classList.add('hidden');
   }
@@ -250,36 +270,10 @@ if (startOverlay) {
 }
 
 // Modal management hooks
-if (btnManage && manageModal) {
+if (btnManage) {
   btnManage.addEventListener('click', () => {
-    if (controls) {
-      controls.disable();
-      controls.unlock();
-    }
-    if (raycaster) {
-      raycaster.setEnabled(false);
-    }
-    if (hud) {
-      hud.hidePrompt();
-    }
-    if (mobileControls && typeof mobileControls.hideJoystick === 'function') {
-      mobileControls.hideJoystick();
-    }
-    manageModal.classList.remove('hidden');
-  });
-}
-
-if (manageClose && manageModal) {
-  manageClose.addEventListener('click', () => {
-    manageModal.classList.add('hidden');
-    if (controls) {
-      controls.enable();
-    }
-    if (raycaster) {
-      raycaster.setEnabled(true);
-    }
-    if (startOverlay) {
-      startOverlay.classList.remove('hidden');
+    if (photoManager) {
+      photoManager.open(1);
     }
   });
 }
