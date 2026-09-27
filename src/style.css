@@ -1,0 +1,128 @@
+/* 3D Memory Room (기억의 다락방) - Base Stylesheet */
+
+@layer base {
+  :root {
+    --color-sunset: #ff9d42;
+    --color-sunset-light: #ffb76e;
+    --color-sunset-dark: #d66816;
+    --color-lamp: #ffc67d;
+    --color-wood-dark: #2d1a10;
+    --color-wood-base: #4a2e1b;
+    --color-paper: #faf7f2;
+    --color-bg-dark: #120d09;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background-color: var(--color-bg-dark);
+    color: #f5f5f4;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}
+
+/* Custom Font Helpers */
+.font-batang {
+  font-family: 'Gowun Batang', 'MaruBuri', serif;
+}
+
+.font-hand {
+  font-family: 'Caveat', cursive;
+}
+
+/* WebGL Canvas */
+#webgl-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  z-index: 0;
+  outline: none;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Crosshair and HUD */
+#crosshair {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: rgba(255, 235, 204, 0.85);
+  box-shadow: 0 0 10px rgba(255, 198, 125, 0.9), 0 0 4px rgba(255, 157, 66, 0.6);
+  transition: transform 0.15s ease, opacity 0.2s ease;
+}
+
+#crosshair.active {
+  transform: scale(1.6);
+  background-color: #ffb76e;
+  box-shadow: 0 0 14px rgba(255, 198, 125, 1), 0 0 6px #ff9d42;
+}
+
+/* Interaction Prompt */
+#interaction-prompt {
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#interaction-prompt.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Polaroid Card Texture & Shadow */
+.polaroid-card {
+  background-color: var(--color-paper);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65), 0 0 30px rgba(255, 198, 125, 0.15);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Custom Scrollbar for Story & Modal */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(217, 119, 6, 0.4);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(217, 119, 6, 0.7);
+}
+
+/* Range input styling */
+input[type='range'] {
+  accent-color: #ff9d42;
+}
+
+/* Modal helper utilities */
+.hidden {
+  display: none !important;
+}
