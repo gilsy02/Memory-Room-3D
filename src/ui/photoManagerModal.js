@@ -42,6 +42,22 @@ function resolveElement(target) {
 }
 
 /**
+ * Escapes unsafe HTML characters to prevent XSS in template interpolation.
+ *
+ * @param {string} str
+ * @returns {string}
+ */
+export function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
  * Displays a warm, subtle toast message in the bottom center of the screen.
  *
  * @param {string} message
@@ -245,12 +261,12 @@ export function setupPhotoManagerModal(options = {}) {
             </div>
             <div class="flex-1 min-w-0">
               <div class="text-[11px] font-bold leading-tight truncate">액자 ${slotNum}</div>
-              <div class="text-[9px] text-stone-400 truncate opacity-85">${memory.title || '제목 없음'}</div>
+              <div class="text-[9px] text-stone-400 truncate opacity-85">${escapeHtml(memory.title) || '제목 없음'}</div>
             </div>
           </div>
         `;
       });
-    } else {
+    } else if (typeof document !== 'undefined') {
       // Dynamically construct 8 cards if empty
       slotSelector.innerHTML = '';
       for (let slotNum = 1; slotNum <= 8; slotNum++) {
@@ -279,7 +295,7 @@ export function setupPhotoManagerModal(options = {}) {
             </div>
             <div class="flex-1 min-w-0">
               <div class="text-[11px] font-bold leading-tight truncate">액자 ${slotNum}</div>
-              <div class="text-[9px] text-stone-400 truncate opacity-85">${memory.title || '제목 없음'}</div>
+              <div class="text-[9px] text-stone-400 truncate opacity-85">${escapeHtml(memory.title) || '제목 없음'}</div>
             </div>
           </div>
         `;
@@ -526,9 +542,16 @@ export function setupPhotoManagerModal(options = {}) {
           options.onImport(imported);
         }
 
+        if (importFileInput) {
+          importFileInput.value = '';
+        }
+
         showToast('성공적으로 추억 데이터를 복원했습니다.');
         return imported;
       } catch (err) {
+        if (importFileInput) {
+          importFileInput.value = '';
+        }
         showToast(err.message || '가져오기에 실패했습니다.', 'error');
         throw err;
       }
@@ -652,6 +675,9 @@ export function setupPhotoManagerModal(options = {}) {
     if (file) {
       handleImageFile(file);
     }
+    if (uploadFileInput) {
+      uploadFileInput.value = '';
+    }
   };
 
   const onDragOver = (e) => {
@@ -710,20 +736,38 @@ export function setupPhotoManagerModal(options = {}) {
 
   const onImportFileChange = (e) => {
     const file = e?.target?.files?.[0];
-    if (!file) return;
+    if (!file) {
+      if (importFileInput) {
+        importFileInput.value = '';
+      }
+      return;
+    }
 
     if (typeof FileReader !== 'undefined') {
       const reader = new FileReader();
       reader.onload = (readEvent) => {
         const text = readEvent?.target?.result;
-        if (text) {
-          importBackup(text);
+        try {
+          if (text) {
+            importBackup(text);
+          }
+        } finally {
+          if (importFileInput) {
+            importFileInput.value = '';
+          }
         }
       };
       reader.onerror = () => {
+        if (importFileInput) {
+          importFileInput.value = '';
+        }
         showToast('파일을 읽는 중 오류가 발생했습니다.', 'error');
       };
       reader.readAsText(file);
+    } else {
+      if (importFileInput) {
+        importFileInput.value = '';
+      }
     }
   };
 

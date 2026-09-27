@@ -140,6 +140,13 @@ if (canvas) {
       if (hud) {
         hud.hidePrompt();
       }
+      if (!hasEnteredRoom) {
+        if (startOverlay) startOverlay.classList.remove('hidden');
+        if (raycaster) raycaster.setEnabled(false);
+      }
+      if (hasEnteredRoom && mobileControls && typeof mobileControls.showJoystick === 'function') {
+        mobileControls.showJoystick();
+      }
     }
   });
 
@@ -177,8 +184,9 @@ if (canvas) {
       if (hud) {
         hud.hidePrompt();
       }
-      if (!hasEnteredRoom && startOverlay) {
-        startOverlay.classList.remove('hidden');
+      if (!hasEnteredRoom) {
+        if (startOverlay) startOverlay.classList.remove('hidden');
+        if (raycaster) raycaster.setEnabled(false);
       }
       if (hasEnteredRoom && mobileControls && typeof mobileControls.showJoystick === 'function') {
         mobileControls.showJoystick();
@@ -280,6 +288,10 @@ function enterRoom() {
   }
   if (mobileControls && typeof mobileControls.showJoystick === 'function') {
     mobileControls.showJoystick();
+  }
+  const btnSpan = btnStart ? btnStart.querySelector('span') : null;
+  if (btnSpan) {
+    btnSpan.textContent = '다락방으로 돌아가기';
   }
 }
 

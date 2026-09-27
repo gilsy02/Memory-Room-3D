@@ -258,8 +258,8 @@ export function setupControls(camera, domElement = null, bounds = {}, options = 
       }
     }
 
-    // Velocity damping
-    const blend = Math.min(1.0, config.damping * dt);
+    // Velocity damping (exponential decay for framerate independence)
+    const blend = 1.0 - Math.exp(-config.damping * dt);
     velocity.x += (targetVx - velocity.x) * blend;
     velocity.z += (targetVz - velocity.z) * blend;
     velocity.y = 0;

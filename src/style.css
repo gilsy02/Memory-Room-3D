@@ -153,3 +153,99 @@ input[type='range'] {
 .hidden {
   display: none !important;
 }
+
+/* Touch and Mobile Polish */
+button,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Mobile & Tablet Responsive Polish */
+@media (max-width: 640px) {
+  #start-overlay {
+    padding: 1rem;
+  }
+
+  #start-overlay > div {
+    padding: 1.5rem 1.25rem;
+    max-height: 94vh;
+    overflow-y: auto;
+  }
+
+  /* Polaroid Card on Mobile */
+  .polaroid-card {
+    padding: 1.25rem 1rem 1rem 1rem !important;
+    max-width: 92vw !important;
+  }
+
+  .polaroid-card #polaroid-title {
+    font-size: 1.15rem !important;
+  }
+
+  .polaroid-card #polaroid-story {
+    font-size: 0.8rem !important;
+    max-height: 100px;
+  }
+
+  /* Photo Manager Modal on Mobile */
+  #manage-modal > div {
+    max-height: 94vh !important;
+    max-width: 95vw !important;
+  }
+
+  #manage-modal .p-5 {
+    padding: 1rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* 2 columns on narrow mobile for slot selector cards */
+  #slot-selector {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.375rem !important;
+  }
+
+  #slot-selector .slot-btn {
+    padding: 0.375rem !important;
+  }
+
+  /* Modal Footer Wrap on small screens */
+  #manage-modal .p-4.border-t {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  #manage-modal .p-4.border-t > div {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  #btn-save-memory {
+    width: 100%;
+    padding: 0.625rem !important;
+  }
+
+  /* Bottom hint bar hide on small mobile to give room to joystick */
+  #hud footer {
+    display: none;
+  }
+
+  /* Mobile virtual joystick safe area */
+  #mobile-joystick-zone {
+    bottom: max(16px, env(safe-area-inset-bottom, 16px)) !important;
+    left: max(16px, env(safe-area-inset-left, 16px)) !important;
+  }
+}
+
+/* Desktop Enhancements */
+@media (min-width: 1024px) {
+  .polaroid-card:hover {
+    box-shadow:
+      0 30px 60px -15px rgba(0, 0, 0, 0.75),
+      0 0 45px rgba(255, 198, 125, 0.28),
+      inset 0 0 90px rgba(245, 230, 211, 0.35);
+  }
+}
