@@ -1,7 +1,10 @@
 import './style.css';
 import * as THREE from 'three';
+import { getMemories } from './storage/photoStorage.js';
 
 console.log('[기억의 다락방] Initializing project scaffolding...');
+const initialMemories = getMemories();
+console.log(`[기억의 다락방] Loaded ${initialMemories.length} memories from storage.`);
 
 // Canvas & WebGL Test Scene
 const canvas = document.getElementById('webgl-canvas');
