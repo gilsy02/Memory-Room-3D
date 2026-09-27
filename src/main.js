@@ -13,6 +13,7 @@ import { setupHUD } from './ui/hud.js';
 import { setupRaycaster } from './interaction/raycaster.js';
 import { setupPolaroidModal } from './ui/polaroidModal.js';
 import { setupPhotoManagerModal } from './ui/photoManagerModal.js';
+import { setupAmbientSound } from './audio/ambientSound.js';
 
 console.log('[기억의 다락방] Initializing project scaffolding...');
 const initialMemories = getMemories();
@@ -33,6 +34,7 @@ let hud = null;
 let raycaster = null;
 let polaroid = null;
 let photoManager = null;
+let ambientSound = null;
 let hasEnteredRoom = false;
 
 function isAnyModalOpen() {
@@ -77,6 +79,9 @@ if (canvas) {
   // Setup Heads-Up Display (HUD)
   hud = setupHUD();
 
+  // Setup Procedural Ambient Music & Cozy Sound Effects
+  ambientSound = setupAmbientSound();
+
   // Setup Center Raycasting & Interaction Prompt
   raycaster = setupRaycaster(camera, interactiveMeshes, {
     domElement: canvas,
@@ -90,6 +95,9 @@ if (canvas) {
     },
     onSelect: (memory, slot) => {
       console.log(`[기억의 다락방] Selected memory #${slot}: ${memory?.title}`);
+      if (ambientSound) {
+        ambientSound.playChime();
+      }
       const latestMemories = getMemories();
       if (polaroid) {
         polaroid.open(memory, latestMemories);
@@ -106,6 +114,16 @@ if (canvas) {
   polaroid = setupPolaroidModal({
     controls,
     raycaster,
+    onOpen: () => {
+      if (ambientSound) {
+        ambientSound.playPaperRustle();
+      }
+    },
+    onNavigate: () => {
+      if (ambientSound) {
+        ambientSound.playPaperRustle();
+      }
+    },
     onEdit: (memory) => {
       console.log(`[기억의 다락방] Edit memory requested for slot ${memory?.slot}: ${memory?.title}`);
       if (polaroid) {
@@ -116,6 +134,9 @@ if (canvas) {
       }
     },
     onClose: () => {
+      if (ambientSound) {
+        ambientSound.playPaperRustle();
+      }
       if (hud) {
         hud.hidePrompt();
       }
@@ -128,6 +149,9 @@ if (canvas) {
     raycaster,
     memories: initialMemories,
     onSave: (savedItem) => {
+      if (ambientSound) {
+        ambientSound.playChime();
+      }
       console.log(`[기억의 다락방] Updating 3D frame texture for slot ${savedItem.slot}`);
       updateFrameTexture(savedItem.slot, savedItem.imageUrl);
       const fresh = getMemories();
@@ -241,6 +265,9 @@ if (canvas) {
 // Start overlay enter room hook
 function enterRoom() {
   hasEnteredRoom = true;
+  if (ambientSound && !ambientSound.isPlaying()) {
+    ambientSound.play();
+  }
   if (startOverlay) {
     startOverlay.classList.add('hidden');
   }
