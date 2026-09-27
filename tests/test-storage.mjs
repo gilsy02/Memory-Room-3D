@@ -210,6 +210,115 @@ await asyncTest('updateMemory() acts as alias and updates slot correctly', async
   assert.ok(slot5.imageUrl.length > 0);
 });
 
+await asyncTest('updateMemory() finds slot by id when slot is omitted', async () => {
+  const result = await updateMemory({
+    id: 'mem_03',
+    title: '별빛 쏟아지던 제주 협재'
+  });
+
+  assert.equal(result.slot, 3);
+  assert.equal(result.id, 'mem_03');
+  assert.equal(result.title, '별빛 쏟아지던 제주 협재');
+
+  const memories = getMemories();
+  const slot3 = memories.find((m) => m.id === 'mem_03');
+  assert.equal(slot3.title, '별빛 쏟아지던 제주 협재');
+});
+
+await asyncTest('saveMemory() avoids unnecessary image recompression when imageUrl is omitted or unchanged', async () => {
+  let canvasCallCount = 0;
+
+  class SpyImage {
+    constructor() {
+      this.naturalWidth = 800;
+      this.naturalHeight = 600;
+      setTimeout(() => {
+        if (this.onload) this.onload();
+      }, 2);
+    }
+  }
+
+  const origDoc = globalThis.document;
+  const origImg = globalThis.Image;
+
+  const mockContext = {
+    fillStyle: '',
+    fillRect: () => {},
+    drawImage: () => {},
+    createLinearGradient: () => ({ addColorStop: () => {} }),
+    createRadialGradient: () => ({ addColorStop: () => {} }),
+    beginPath: () => {},
+    arc: () => {},
+    fill: () => {},
+    moveTo: () => {},
+    lineTo: () => {},
+    bezierCurveTo: () => {},
+    quadraticCurveTo: () => {},
+    stroke: () => {},
+    closePath: () => {},
+    ellipse: () => {},
+    save: () => {},
+    restore: () => {},
+    translate: () => {},
+    rotate: () => {},
+    strokeRect: () => {},
+    roundRect: () => {}
+  };
+
+  globalThis.document = {
+    createElement: (tag) => {
+      if (tag === 'canvas') {
+        canvasCallCount++;
+        return {
+          width: 0,
+          height: 0,
+          getContext: () => mockContext,
+          toDataURL: () => 'data:image/jpeg;base64,compressed_image_test'
+        };
+      }
+      return {};
+    }
+  };
+  globalThis.Image = SpyImage;
+
+  try {
+    // 1. Initial save with new image - should compress (canvasCallCount becomes 1)
+    await saveMemory({
+      slot: 4,
+      title: '책방 이야기',
+      imageUrl: 'data:image/jpeg;base64,initial_raw_image'
+    });
+    assert.equal(canvasCallCount, 1, 'Should compress new image on initial save');
+
+    // 2. Metadata-only update (imageUrl omitted) - must NOT compress
+    await saveMemory({
+      slot: 4,
+      title: '수정된 책방 제목',
+      story: '스토리만 수정함'
+    });
+    assert.equal(canvasCallCount, 1, 'Must NOT recompress when imageUrl is omitted');
+
+    // 3. Update with identical imageUrl - must NOT compress
+    const currentMemory = getMemories().find((m) => m.slot === 4);
+    await saveMemory({
+      slot: 4,
+      title: '또 다른 수정',
+      imageUrl: currentMemory.imageUrl
+    });
+    assert.equal(canvasCallCount, 1, 'Must NOT recompress when imageUrl is unchanged');
+
+    // 4. Update with brand new distinct imageUrl - should compress (canvasCallCount becomes 2)
+    await saveMemory({
+      slot: 4,
+      imageUrl: 'data:image/jpeg;base64,brand_new_different_image'
+    });
+    assert.equal(canvasCallCount, 2, 'Should compress when imageUrl actually changes');
+  } finally {
+    globalThis.document = origDoc;
+    globalThis.Image = origImg;
+  }
+});
+
 await asyncTest('saveMemory() throws error for invalid slot numbers', async () => {
   await assert.rejects(
     async () => {
@@ -238,7 +347,7 @@ test('exportMemoriesJSON() generates valid JSON with 8 items', () => {
   const parsed = JSON.parse(jsonStr);
   assert.equal(Array.isArray(parsed), true);
   assert.equal(parsed.length, 8);
-  assert.equal(parsed[2].title, '제주도 푸른 밤'); // From previous update
+  assert.equal(parsed[2].title, '별빛 쏟아지던 제주 협재'); // From previous update
 });
 
 test('importMemoriesJSON() loads and validates imported JSON data', () => {

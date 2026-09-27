@@ -123,7 +123,7 @@ export async function compressImage(fileOrDataUrl, maxDimension = MAX_DIMENSION,
  * @returns {Array<Object>}
  */
 function normalizeMemories(items) {
-  const defaults = getDefaultPresets();
+  const defaults = DEFAULT_MEMORIES;
   const slotMap = new Map();
 
   // Populate defaults first
@@ -164,14 +164,14 @@ export function getMemories() {
   try {
     const raw = storage.getItem(STORAGE_KEY);
     if (!raw) {
-      const defaults = getDefaultPresets();
+      const defaults = DEFAULT_MEMORIES;
       storage.setItem(STORAGE_KEY, JSON.stringify(defaults));
       return JSON.parse(JSON.stringify(defaults));
     }
 
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed) || parsed.length === 0) {
-      const defaults = getDefaultPresets();
+      const defaults = DEFAULT_MEMORIES;
       storage.setItem(STORAGE_KEY, JSON.stringify(defaults));
       return JSON.parse(JSON.stringify(defaults));
     }
@@ -179,7 +179,7 @@ export function getMemories() {
     return normalizeMemories(parsed);
   } catch (err) {
     console.warn('[photoStorage] Error reading memories from storage, falling back to defaults:', err);
-    const defaults = getDefaultPresets();
+    const defaults = DEFAULT_MEMORIES;
     try {
       storage.setItem(STORAGE_KEY, JSON.stringify(defaults));
     } catch {
@@ -201,12 +201,21 @@ export async function saveMemory(item) {
     throw new Error('Invalid memory item: must be an object');
   }
 
-  const slot = Number(item.slot);
+  const memories = getMemories();
+
+  let slot = Number(item.slot);
+  // Fallback to slot lookup by id if slot is not provided
+  if ((!slot || slot < 1 || slot > 8) && item.id) {
+    const found = memories.find((m) => m.id === item.id);
+    if (found) {
+      slot = found.slot;
+    }
+  }
+
   if (!slot || slot < 1 || slot > 8) {
     throw new Error(`Invalid memory slot "${item.slot}". Must be an integer between 1 and 8.`);
   }
 
-  const memories = getMemories();
   const existingIdx = memories.findIndex((m) => m.slot === slot);
   const fallback = memories[existingIdx] || {
     id: `mem_0${slot}`,
@@ -218,14 +227,18 @@ export async function saveMemory(item) {
     frameStyle: 'wood-gold'
   };
 
-  let imageUrl = item.imageUrl !== undefined ? item.imageUrl : fallback.imageUrl;
-
-  // If new image is provided and requires compression
-  if (imageUrl) {
-    try {
-      imageUrl = await compressImage(imageUrl, MAX_DIMENSION, JPEG_QUALITY);
-    } catch (err) {
-      console.warn('[photoStorage] Image compression failed, using original:', err);
+  let imageUrl = fallback.imageUrl;
+  // Compress only when new/different imageUrl is explicitly provided
+  if (item.imageUrl !== undefined) {
+    if (item.imageUrl && item.imageUrl !== fallback.imageUrl) {
+      try {
+        imageUrl = await compressImage(item.imageUrl, MAX_DIMENSION, JPEG_QUALITY);
+      } catch (err) {
+        console.warn('[photoStorage] Image compression failed, using original:', err);
+        imageUrl = item.imageUrl;
+      }
+    } else {
+      imageUrl = item.imageUrl;
     }
   }
 
@@ -235,7 +248,7 @@ export async function saveMemory(item) {
     title: item.title !== undefined ? String(item.title).trim() : fallback.title,
     date: item.date !== undefined ? String(item.date).trim() : fallback.date,
     story: item.story !== undefined ? String(item.story).trim() : fallback.story,
-    imageUrl: imageUrl || fallback.imageUrl,
+    imageUrl: imageUrl !== undefined ? imageUrl : fallback.imageUrl,
     frameStyle: item.frameStyle || fallback.frameStyle || 'wood-gold'
   };
 
