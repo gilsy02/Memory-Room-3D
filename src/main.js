@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { getMemories } from './storage/photoStorage.js';
 import { initScene } from './scene/sceneManager.js';
 import { setupLighting } from './environment/lighting.js';
+import { buildAtticRoom } from './environment/roomGeometry.js';
+import { createDustParticles, updateDust } from './environment/dustParticles.js';
 
 console.log('[기억의 다락방] Initializing project scaffolding...');
 const initialMemories = getMemories();
@@ -14,47 +16,28 @@ if (canvas) {
   const { scene, camera, renderer } = initScene(canvas);
   const { lights, updateLights } = setupLighting(scene);
 
-  // Verification test meshes (Floor receiver & floating memory cube caster)
-  const floorGeo = new THREE.PlaneGeometry(12, 12);
-  const floorMat = new THREE.MeshStandardMaterial({
-    color: 0x4a3324,
-    roughness: 0.8,
-    metalness: 0.1
-  });
-  const floorMesh = new THREE.Mesh(floorGeo, floorMat);
-  floorMesh.rotation.x = -Math.PI / 2;
-  floorMesh.position.set(0, 0, -3);
-  floorMesh.receiveShadow = true;
-  scene.add(floorMesh);
+  // Build procedural attic room environment & movement bounds
+  const { roomGroup, bounds } = buildAtticRoom(scene);
 
-  const cubeGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-  const cubeMat = new THREE.MeshStandardMaterial({
-    color: 0xff9d42,
-    roughness: 0.35,
-    metalness: 0.15
-  });
-  const testCube = new THREE.Mesh(cubeGeo, cubeMat);
-  testCube.position.set(0, 1.0, -3.5);
-  testCube.castShadow = true;
-  testCube.receiveShadow = true;
-  scene.add(testCube);
+  // Golden dust particles floating in sunlight
+  const { points: dustPoints } = createDustParticles(scene);
 
-  camera.lookAt(0, 1.0, -3.5);
+  camera.position.set(0, 1.65, 2.0);
+  camera.lookAt(0, 1.65, -3.0);
 
   const clock = new THREE.Clock();
 
   // Render & Animation Loop
   function animate() {
     requestAnimationFrame(animate);
+    const delta = clock.getDelta();
     const elapsedTime = clock.getElapsedTime();
 
     // Update dynamic lighting (gentle breathing / flicker)
     updateLights(elapsedTime);
 
-    // Subtle cube hover & rotation
-    testCube.rotation.x += 0.005;
-    testCube.rotation.y += 0.01;
-    testCube.position.y = 1.0 + Math.sin(elapsedTime * 1.5) * 0.08;
+    // Update floating sunlight dust motes
+    updateDust(delta, elapsedTime);
 
     renderer.render(scene, camera);
   }
