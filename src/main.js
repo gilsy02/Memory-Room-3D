@@ -9,6 +9,8 @@ import { setupControls } from './controls/firstPersonControls.js';
 import { setupMobileControls } from './controls/mobileControls.js';
 import { createPhotoFrames } from './objects/photoFrame.js';
 import { createStringLights } from './objects/stringLights.js';
+import { setupHUD } from './ui/hud.js';
+import { setupRaycaster } from './interaction/raycaster.js';
 
 console.log('[기억의 다락방] Initializing project scaffolding...');
 const initialMemories = getMemories();
@@ -25,6 +27,8 @@ const polaroidClose = document.getElementById('polaroid-close');
 
 let controls = null;
 let mobileControls = null;
+let hud = null;
+let raycaster = null;
 
 function isAnyModalOpen() {
   return (
@@ -63,9 +67,44 @@ if (canvas) {
   controls = setupControls(camera, canvas, bounds);
   mobileControls = setupMobileControls(controls, canvas);
 
+  // Setup Heads-Up Display (HUD)
+  hud = setupHUD();
+
+  // Setup Center Raycasting & Interaction Prompt
+  raycaster = setupRaycaster(camera, interactiveMeshes, {
+    domElement: canvas,
+    controls,
+    maxDistance: 4.0,
+    onHover: (memory, slot) => {
+      hud.showPrompt(memory);
+    },
+    onHoverExit: () => {
+      hud.hidePrompt();
+    },
+    onSelect: (memory, slot) => {
+      console.log(`[기억의 다락방] Selected memory #${slot}: ${memory?.title}`);
+      // Dispatch custom event for Task 8 Polaroid modal integration
+      const event = new CustomEvent('memory-select', {
+        detail: { memory, slot }
+      });
+      window.dispatchEvent(event);
+    }
+  });
+
+  // Wire mobile touch button in HUD to trigger selection
+  hud.onSelect((memory) => {
+    raycaster.triggerSelect(memory);
+  });
+
+  // Initially disable raycast until user enters the attic room
+  raycaster.setEnabled(false);
+
   controls.onLock(() => {
     if (startOverlay) {
       startOverlay.classList.add('hidden');
+    }
+    if (raycaster) {
+      raycaster.setEnabled(true);
     }
   });
 
@@ -73,6 +112,12 @@ if (canvas) {
     // Show start overlay when unlocked (ESC pressed) unless a modal dialog is open
     if (!isAnyModalOpen() && startOverlay) {
       startOverlay.classList.remove('hidden');
+      if (raycaster) {
+        raycaster.setEnabled(false);
+      }
+    }
+    if (hud) {
+      hud.hidePrompt();
     }
   });
 
@@ -102,6 +147,11 @@ if (canvas) {
       mobileControls.update(delta);
     }
 
+    // Update center raycasting & frame hover glow
+    if (raycaster) {
+      raycaster.update(delta);
+    }
+
     // Update dynamic lighting (gentle breathing / flicker)
     updateLights(elapsedTime);
 
@@ -125,6 +175,9 @@ function enterRoom() {
   if (controls) {
     controls.enable();
     controls.lock();
+  }
+  if (raycaster) {
+    raycaster.setEnabled(true);
   }
   if (mobileControls && typeof mobileControls.showJoystick === 'function') {
     mobileControls.showJoystick();
@@ -151,6 +204,12 @@ if (btnManage && manageModal) {
       controls.disable();
       controls.unlock();
     }
+    if (raycaster) {
+      raycaster.setEnabled(false);
+    }
+    if (hud) {
+      hud.hidePrompt();
+    }
     if (mobileControls && typeof mobileControls.hideJoystick === 'function') {
       mobileControls.hideJoystick();
     }
@@ -164,6 +223,9 @@ if (manageClose && manageModal) {
     if (controls) {
       controls.enable();
     }
+    if (raycaster) {
+      raycaster.setEnabled(true);
+    }
     if (startOverlay) {
       startOverlay.classList.remove('hidden');
     }
@@ -176,10 +238,21 @@ if (polaroidClose && polaroidModal) {
     if (controls) {
       controls.enable();
     }
+    if (raycaster) {
+      raycaster.setEnabled(true);
+    }
     if (startOverlay) {
       startOverlay.classList.remove('hidden');
     }
   });
 }
 
-console.log('[기억의 다락방] Navigation and collision controls active.');
+// Hook placeholder for memory-select event
+if (typeof window !== 'undefined') {
+  window.addEventListener('memory-select', (event) => {
+    const { memory, slot } = event.detail || {};
+    console.log(`[기억의 다락방] memory-select received for slot ${slot}:`, memory?.title);
+  });
+}
+
+console.log('[기억의 다락방] Navigation, collision, raycasting, and HUD prompt active.');
