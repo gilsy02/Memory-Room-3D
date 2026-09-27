@@ -7,6 +7,8 @@ import { buildAtticRoom } from './environment/roomGeometry.js';
 import { createDustParticles, updateDust } from './environment/dustParticles.js';
 import { setupControls } from './controls/firstPersonControls.js';
 import { setupMobileControls } from './controls/mobileControls.js';
+import { createPhotoFrames } from './objects/photoFrame.js';
+import { createStringLights } from './objects/stringLights.js';
 
 console.log('[기억의 다락방] Initializing project scaffolding...');
 const initialMemories = getMemories();
@@ -42,6 +44,17 @@ if (canvas) {
 
   // Golden dust particles floating in sunlight
   const { points: dustPoints } = createDustParticles(scene);
+
+  // 3D Photo frames mounted on attic walls
+  const {
+    frameGroup,
+    interactiveMeshes,
+    updateFrameTexture,
+    getFrameBySlot
+  } = createPhotoFrames(scene, initialMemories);
+
+  // Glowing fairy string lights draped across crossbeams
+  const { lightsGroup, updateFairyLights } = createStringLights(scene);
 
   camera.position.set(0, 1.65, 2.0);
   camera.lookAt(0, 1.65, -3.0);
@@ -94,6 +107,9 @@ if (canvas) {
 
     // Update floating sunlight dust motes
     updateDust(delta, elapsedTime);
+
+    // Update twinkling fairy string lights
+    updateFairyLights(elapsedTime);
 
     renderer.render(scene, camera);
   }
