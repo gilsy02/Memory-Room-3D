@@ -273,3 +273,25 @@ export function generateSunsetSkyTexture() {
   texture.needsUpdate = true;
   return texture;
 }
+
+/**
+ * Generates a simple vertical gradient sky (no sun, no clouds).
+ * @param {string[]} colors - Colors from zenith to horizon
+ * @returns {THREE.CanvasTexture}
+ */
+export function generateGradientSkyTexture(colors) {
+  const width = 512;
+  const height = 512;
+  const canvas = createProceduralCanvas(width, height);
+  const ctx = canvas.getContext('2d');
+
+  const grad = ctx.createLinearGradient(0, 0, 0, height);
+  colors.forEach((c, i) => grad.addColorStop(i / Math.max(colors.length - 1, 1), c));
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, width, height);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+  return texture;
+}

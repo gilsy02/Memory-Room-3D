@@ -33,7 +33,8 @@ export function generateDustSprite() {
  * @param {THREE.Scene} scene
  * @returns {{ points: THREE.Points, updateDust: (delta: number, time?: number) => void }}
  */
-export function createDustParticles(scene) {
+export function createDustParticles(scene, options = {}) {
+  const { color = 0xffdf88, size = 0.08, falling = false } = options;
   const PARTICLE_COUNT = 400;
 
   const positions = new Float32Array(PARTICLE_COUNT * 3);
@@ -52,7 +53,7 @@ export function createDustParticles(scene) {
     let x, y, z;
 
     // ~70% of particles concentrated in the warm golden sunlight beam
-    if (i < 280) {
+    if (i < 280 && !falling) {
       const t = Math.random(); // Position along beam length
       const beamCenter = new THREE.Vector3().lerpVectors(beamOrigin, beamTarget, t);
       const radius = (Math.random() ** 0.5) * (0.5 + t * 1.0);
@@ -91,12 +92,12 @@ export function createDustParticles(scene) {
   const sprite = generateDustSprite();
 
   const material = new THREE.PointsMaterial({
-    size: 0.08,
+    size,
     map: sprite,
-    color: 0xffdf88,
+    color,
     transparent: true,
     opacity: 0.8,
-    blending: THREE.AdditiveBlending,
+    blending: falling ? THREE.NormalBlending : THREE.AdditiveBlending,
     depthWrite: false
   });
 
@@ -135,7 +136,13 @@ export function createDustParticles(scene) {
       const offsetZ = Math.cos(t * sz + pz) * 0.16 + Math.sin(t * 0.25 + px) * 0.05;
 
       posArray[i3] = baseX + offsetX;
-      posArray[i3 + 1] = baseY + offsetY;
+      if (falling) {
+        // Petals drift down from 4.0m to the floor, then wrap back to the top
+        const fallY = baseY - ((t * (0.15 + sy * 0.3)) % 4.0);
+        posArray[i3 + 1] = (fallY < 0.05 ? fallY + 4.0 : fallY) + offsetY * 0.5;
+      } else {
+        posArray[i3 + 1] = baseY + offsetY;
+      }
       posArray[i3 + 2] = baseZ + offsetZ;
     }
 

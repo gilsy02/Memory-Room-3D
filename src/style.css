@@ -249,3 +249,21 @@ textarea {
       inset 0 0 90px rgba(245, 230, 211, 0.35);
   }
 }
+
+/* Room theme picker */
+.theme-btn {
+  padding: 0.5rem 0.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(217, 119, 6, 0.3);
+  color: #d6d3d1;
+  background: rgba(28, 25, 23, 0.6);
+  cursor: pointer;
+}
+.theme-btn:hover {
+  border-color: rgba(251, 191, 36, 0.6);
+}
+.theme-btn.theme-active {
+  border-color: rgba(251, 191, 36, 0.9);
+  color: #fde68a;
+  background: rgba(180, 83, 9, 0.35);
+}

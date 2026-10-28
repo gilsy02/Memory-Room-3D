@@ -5,6 +5,7 @@ import { initScene } from './scene/sceneManager.js';
 import { setupLighting } from './environment/lighting.js';
 import { buildAtticRoom } from './environment/roomGeometry.js';
 import { createDustParticles, updateDust } from './environment/dustParticles.js';
+import { THEMES, getSavedTheme, saveTheme, applyTheme } from './environment/themes.js';
 import { setupControls } from './controls/firstPersonControls.js';
 import { setupMobileControls } from './controls/mobileControls.js';
 import { createPhotoFrames } from './objects/photoFrame.js';
@@ -17,6 +18,7 @@ import { setupAmbientSound } from './audio/ambientSound.js';
 
 console.log('[기억의 다락방] Initializing project scaffolding...');
 const initialMemories = getMemories();
+const theme = getSavedTheme();
 console.log(`[기억의 다락방] Loaded ${initialMemories.length} memories from storage.`);
 
 // UI DOM references
@@ -55,8 +57,11 @@ if (canvas) {
   // Build procedural attic room environment & movement bounds
   const { roomGroup, bounds } = buildAtticRoom(scene);
 
-  // Golden dust particles floating in sunlight
-  const { points: dustPoints } = createDustParticles(scene);
+  // Theme reskin (materials, sky, lights, props) and its particles
+  applyTheme(theme, { scene, roomGroup, lights });
+  if (theme.particles) {
+    createDustParticles(scene, theme.particles);
+  }
 
   // 3D Photo frames mounted on attic walls
   const {
@@ -307,6 +312,18 @@ if (startOverlay) {
     enterRoom();
   });
 }
+
+// Theme picker: save choice and reload to rebuild the scene cleanly
+document.querySelectorAll('[data-theme-id]').forEach((btn) => {
+  const isActive = btn.dataset.themeId === theme.id;
+  btn.classList.toggle('theme-active', isActive);
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!THEMES[btn.dataset.themeId] || btn.dataset.themeId === theme.id) return;
+    saveTheme(btn.dataset.themeId);
+    window.location.reload();
+  });
+});
 
 // Modal management hooks
 if (btnManage) {
