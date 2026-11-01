@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { THEMES, getSavedTheme, applyTheme } from '../src/environment/themes.js';
 import { buildAtticRoom } from '../src/environment/roomGeometry.js';
 import { setupLighting } from '../src/environment/lighting.js';
+import { setupAmbientSound, createMockAudioContext, CHORD_PROGRESSION } from '../src/audio/ambientSound.js';
 import { createDustParticles, updateDust } from '../src/environment/dustParticles.js';
 
 assert.deepEqual(Object.keys(THEMES), ['attic', 'louvre', 'shrine']);
@@ -25,4 +26,19 @@ const scene = new THREE.Scene();
 const { roomGroup } = buildAtticRoom(scene);
 applyTheme(THEMES.shrine, { scene, roomGroup, lights: setupLighting(scene).lights });
 assert.ok(roomGroup.getObjectByName('Torii'), 'shrine adds a torii');
+// Theme sound settings drive the procedural music
+for (const theme of Object.values(THEMES)) {
+  assert.ok(theme.sound, `${theme.id} has sound settings`);
+  const sound = setupAmbientSound({ audioContext: createMockAudioContext(), ...theme.sound });
+  const expected = theme.sound.progression || CHORD_PROGRESSION;
+  assert.equal(sound.getCurrentChord(), expected[0]);
+  for (let i = 0; i < expected.length; i++) sound.nextChord();
+  assert.equal(sound.getCurrentChord(), expected[0], 'progression loops');
+  await sound.play();
+  sound.playChime();
+  sound.pause();
+  sound.destroy();
+}
+assert.equal(THEMES.shrine.sound.voicing, 'pluck');
+
 console.log('✓ All theme tests passed.');

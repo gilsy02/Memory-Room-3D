@@ -11,7 +11,8 @@ export const THEMES = {
   attic: {
     id: 'attic',
     label: '원목 다락방',
-    particles: { color: 0xffdf88, size: 0.08 }
+    particles: { color: 0xffdf88, size: 0.08 },
+    sound: {} // original lofi attic music
   },
   louvre: {
     id: 'louvre',
@@ -25,7 +26,19 @@ export const THEMES = {
     sky: ['#0d1b3d', '#24407a', '#5a7fbf', '#a9c1e6'],
     lights: { dir: 0xfff4e0, lamp: 0xfff1d6, fairy: 0xffe7b0, hemiSky: 0xffffff, hemiGround: 0x6b5a45 },
     particles: null, // no dust in the museum
-    props: 'columns'
+    props: 'columns',
+    sound: {
+      // D major I-V-vi-IV, slow and bright (Canon-like)
+      progression: [
+        { name: 'D', bass: 73.42, notes: [293.66, 369.99, 440.00, 587.33] },
+        { name: 'A', bass: 110.00, notes: [220.00, 277.18, 329.63, 440.00] },
+        { name: 'Bm', bass: 123.47, notes: [246.94, 293.66, 369.99, 493.88] },
+        { name: 'G', bass: 98.00, notes: [196.00, 246.94, 293.66, 392.00] }
+      ],
+      chordIntervalMs: 5500,
+      lowpassCutoff: 1800,
+      chimeNotes: [587.33, 739.99, 880.00] // D5, F#5, A5
+    }
   },
   shrine: {
     id: 'shrine',
@@ -39,7 +52,20 @@ export const THEMES = {
     sky: ['#1f6fd1', '#3d8ee6', '#6fb1f2', '#a8d4fa'], // clear sky, no clouds
     lights: { dir: 0xffffff, lamp: 0xffd9e3, fairy: 0xffc2d4, hemiSky: 0xd6ecff, hemiGround: 0x6b3b2f },
     particles: { color: 0xff9ec0, size: 0.12, falling: true },
-    props: 'torii'
+    props: 'torii',
+    sound: {
+      // Miyako-bushi scale on D (D Eb G A Bb), plucked like a koto
+      progression: [
+        { name: 'I', bass: 73.42, notes: [293.66, 392.00, 440.00, 587.33] },
+        { name: 'II', bass: 98.00, notes: [311.13, 392.00, 466.16, 622.25] },
+        { name: 'III', bass: 110.00, notes: [293.66, 440.00, 466.16, 587.33] },
+        { name: 'IV', bass: 73.42, notes: [392.00, 311.13, 293.66, 220.00] }
+      ],
+      voicing: 'pluck',
+      chordIntervalMs: 3000,
+      lowpassCutoff: 2200,
+      chimeNotes: [880.00, 932.33, 1174.66] // A5, Bb5, D6
+    }
   }
 };
 

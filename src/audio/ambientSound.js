@@ -261,6 +261,14 @@ export function setupAmbientSound(options = {}) {
   const activeVoices = new Set();
 
   const chordInterval = options.chordIntervalMs || 4200;
+  // Theme overrides: chord list, 'sustain' (default pad) or 'pluck' (koto-like), chime notes
+  const progression = Array.isArray(options.progression) && options.progression.length > 0
+    ? options.progression
+    : CHORD_PROGRESSION;
+  const voicing = options.voicing === 'pluck' ? 'pluck' : 'sustain';
+  const chimeNotes = Array.isArray(options.chimeNotes) && options.chimeNotes.length > 0
+    ? options.chimeNotes
+    : [659.25, 783.99, 1046.50]; // E5, G5, C6
 
   // DOM Elements
   const toggleBtn = resolveElement(options.toggleBtn || '#btn-audio-toggle, #bgm-toggle');
@@ -312,7 +320,7 @@ export function setupAmbientSound(options = {}) {
    * @param {number} peakGain - Peak gain level
    * @param {number} [detuneCents=0] - Detune offset in cents
    */
-  function playVoice(freq, type, startTime, duration, peakGain, detuneCents = 0) {
+  function playVoice(freq, type, startTime, duration, peakGain, detuneCents = 0, attackTime = 0.12) {
     if (!audioCtx || audioCtx.state === 'closed') return null;
 
     try {
@@ -326,7 +334,6 @@ export function setupAmbientSound(options = {}) {
       }
 
       // Soft envelope: gentle attack, warm decay
-      const attackTime = 0.12;
       const decayTime = duration - attackTime;
 
       gainNode.gain.setValueAtTime(0.0001, startTime);
@@ -366,7 +373,7 @@ export function setupAmbientSound(options = {}) {
   function playCurrentChord() {
     if (!isPlayingState || !audioCtx) return;
 
-    const chord = CHORD_PROGRESSION[currentChordIndex];
+    const chord = progression[currentChordIndex];
     if (!chord) return;
 
     const now = audioCtx.currentTime;
@@ -375,6 +382,16 @@ export function setupAmbientSound(options = {}) {
     // 1. Warm bass voice (triangle wave, deep and grounded)
     if (chord.bass) {
       playVoice(chord.bass, 'triangle', now, noteDuration, 0.12, 0);
+    }
+
+    if (voicing === 'pluck') {
+      // Koto-like: sparse plucked notes, fast attack and short ring
+      chord.notes.forEach((freq, idx) => {
+        const startTime = now + idx * 0.55;
+        playVoice(freq, 'triangle', startTime, 1.6, 0.09, 0, 0.005);
+        playVoice(freq * 2, 'sine', startTime, 0.6, 0.02, 0, 0.005);
+      });
+      return;
     }
 
     // 2. Upper chord voices with gentle arpeggiation and subtle detune
@@ -397,11 +414,11 @@ export function setupAmbientSound(options = {}) {
    * Advances and plays the next chord in the progression cycle.
    */
   function nextChord() {
-    currentChordIndex = (currentChordIndex + 1) % CHORD_PROGRESSION.length;
+    currentChordIndex = (currentChordIndex + 1) % progression.length;
     if (isPlayingState) {
       playCurrentChord();
     }
-    return CHORD_PROGRESSION[currentChordIndex];
+    return progression[currentChordIndex];
   }
 
   /**
@@ -544,8 +561,6 @@ export function setupAmbientSound(options = {}) {
     ensureAudioContextRunning();
 
     try {
-      // Pentatonic notes: E5 (659.25Hz), G5 (783.99Hz), C6 (1046.50Hz)
-      const chimeNotes = [659.25, 783.99, 1046.50];
       const now = audioCtx.currentTime;
 
       chimeNotes.forEach((freq, idx) => {
@@ -658,7 +673,7 @@ export function setupAmbientSound(options = {}) {
     isMuted: () => currentVolume <= 0.001 || !isPlayingState,
     playPaperRustle,
     playChime,
-    getCurrentChord: () => CHORD_PROGRESSION[currentChordIndex],
+    getCurrentChord: () => progression[currentChordIndex],
     nextChord,
     destroy,
     getAudioContext: () => audioCtx,

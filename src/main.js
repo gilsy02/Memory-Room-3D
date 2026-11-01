@@ -85,7 +85,7 @@ if (canvas) {
   hud = setupHUD();
 
   // Setup Procedural Ambient Music & Cozy Sound Effects
-  ambientSound = setupAmbientSound();
+  ambientSound = setupAmbientSound(theme.sound);
 
   // Setup Center Raycasting & Interaction Prompt
   raycaster = setupRaycaster(camera, interactiveMeshes, {
